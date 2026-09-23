@@ -1,1 +1,381 @@
-# VTerm.github.io
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VTerm — terminal multiplataforma para desarrolladores</title>
+<meta name="description" content="VTerm es una terminal multiplataforma para macOS, Windows y Linux, construida con Electron y xterm.js. Pestañas, perfiles de shell y temas personalizables." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23181A20'/%3E%3Ctext x='50%25' y='62%25' font-size='54' text-anchor='middle' fill='%23E8A33D' font-family='monospace'%3E%3E_%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14161b;
+    --bg-raised: #1b1e25;
+    --bg-terminal: #101216;
+    --line: #2a2e38;
+    --text: #e7e8ec;
+    --text-dim: #8b8fa3;
+    --amber: #e8a33d;
+    --amber-dim: #7a5b2a;
+    --seafoam: #5fd9a0;
+    --blue: #6fa8dc;
+    --violet: #b389e0;
+    --red: #e0685f;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+    --sans: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+    --radius: 6px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  img{max-width:100%; display:block;}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 28px;}
+
+  /* ---------- nav ---------- */
+  header.nav{
+    position:sticky; top:0; z-index:20;
+    background:rgba(20,22,27,0.86);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav .wrap{
+    display:flex; align-items:center; justify-content:space-between;
+    height:64px;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--mono); font-weight:700; font-size:1.05rem; letter-spacing:0.01em;
+  }
+  .brand .dot{color:var(--amber);}
+  nav.links{display:flex; gap:28px; font-size:0.92rem; color:var(--text-dim);}
+  nav.links a:hover{color:var(--text);}
+  .nav-cta{
+    font-family:var(--mono); font-size:0.85rem; font-weight:500;
+    padding:8px 16px; border-radius:var(--radius);
+    border:1px solid var(--line); color:var(--text);
+  }
+  .nav-cta:hover{border-color:var(--amber); color:var(--amber);}
+
+  /* ---------- hero ---------- */
+  .hero{padding:96px 0 64px;}
+  .hero .wrap{
+    display:grid; grid-template-columns:1fr; gap:56px;
+  }
+  .hero-copy{max-width:640px;}
+  .eyebrow-plain{
+    font-family:var(--mono); color:var(--seafoam); font-size:0.88rem; margin-bottom:18px;
+  }
+  h1{
+    font-family:var(--mono); font-weight:800;
+    font-size:clamp(2.1rem, 5vw, 3.3rem);
+    line-height:1.1; letter-spacing:-0.01em;
+    color:var(--text);
+  }
+  h1 span{color:var(--amber);}
+  .hero p.lede{
+    margin-top:20px; font-size:1.13rem; color:var(--text-dim); max-width:520px;
+  }
+  .cta-row{display:flex; flex-wrap:wrap; gap:12px; margin-top:34px;}
+  .btn{
+    display:inline-flex; align-items:center; gap:10px;
+    padding:13px 22px; border-radius:var(--radius);
+    font-family:var(--sans); font-weight:600; font-size:0.95rem;
+    border:1px solid transparent; cursor:pointer; text-decoration:none;
+  }
+  .btn-primary{background:var(--amber); color:#1b1200;}
+  .btn-primary:hover{background:#f2b355;}
+  .btn-secondary{border-color:var(--line); color:var(--text);}
+  .btn-secondary:hover{border-color:var(--text-dim);}
+  .btn svg{width:17px; height:17px; flex-shrink:0;}
+  .hero-note{margin-top:16px; font-size:0.85rem; color:var(--text-dim);}
+  .hero-note code{font-family:var(--mono); background:var(--bg-raised); padding:2px 6px; border-radius:4px;}
+
+  /* ---------- terminal mockup ---------- */
+  .term-shell{
+    background:var(--bg-terminal);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.55);
+  }
+  .term-tabs{
+    display:flex; align-items:center; gap:2px;
+    background:var(--bg-raised);
+    border-bottom:1px solid var(--line);
+    padding:10px 10px 0 10px;
+  }
+  .term-dots{display:flex; gap:7px; margin:0 10px 10px 4px;}
+  .term-dots span{width:11px; height:11px; border-radius:50%;}
+  .term-dots span:nth-child(1){background:#e0685f;}
+  .term-dots span:nth-child(2){background:#e8c23d;}
+  .term-dots span:nth-child(3){background:#5fd977;}
+  .tab{
+    font-family:var(--mono); font-size:0.78rem; color:var(--text-dim);
+    padding:8px 16px; border-radius:6px 6px 0 0;
+  }
+  .tab.active{background:var(--bg-terminal); color:var(--text); border:1px solid var(--line); border-bottom:none;}
+  .term-body{
+    padding:22px 24px 28px; font-family:var(--mono); font-size:0.87rem;
+    color:#d7d9e0;
+  }
+  .term-body .muted{color:var(--text-dim);}
+  .term-body .ok{color:var(--seafoam);}
+  .term-body .accent{color:var(--amber);}
+  .term-body .path{color:var(--blue);}
+  .term-body .cursor{
+    display:inline-block; width:7px; height:15px; background:var(--amber);
+    vertical-align:text-bottom; animation:blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink{50%{opacity:0;}}
+  .term-body p{margin:3px 0;}
+
+  /* ---------- sections ---------- */
+  section{padding:70px 0;}
+  section.alt{background:var(--bg-raised); border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+  h2{
+    font-family:var(--mono); font-weight:700; font-size:1.7rem; letter-spacing:-0.01em;
+    max-width:560px;
+  }
+  .section-lede{color:var(--text-dim); max-width:520px; margin-top:12px; font-size:1rem;}
+
+  /* feature rows */
+  .feature-list{margin-top:46px; display:flex; flex-direction:column;}
+  .feature-row{
+    display:grid; grid-template-columns:200px 1fr; gap:32px;
+    padding:26px 0; border-top:1px solid var(--line);
+  }
+  .feature-row:last-child{border-bottom:1px solid var(--line);}
+  .feature-name{font-family:var(--mono); font-weight:600; color:var(--text);}
+  .feature-desc{color:var(--text-dim); font-size:0.96rem; max-width:520px;}
+  .feature-desc code{font-family:var(--mono); color:var(--seafoam); background:transparent;}
+
+  /* themes strip */
+  .themes-grid{
+    margin-top:44px; display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:18px;
+  }
+  .theme-card{
+    border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--bg-terminal);
+  }
+  .theme-card .swatches{display:flex;}
+  .theme-card .swatches span{height:34px; flex:1;}
+  .theme-card .label{
+    padding:12px 14px; font-family:var(--mono); font-size:0.82rem; color:var(--text-dim);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .theme-card .label b{color:var(--text); font-weight:500;}
+
+  /* platforms / download */
+  .download-grid{
+    margin-top:44px; display:grid; grid-template-columns:repeat(3,1fr); gap:18px;
+  }
+  .platform-card{
+    border:1px solid var(--line); border-radius:8px; padding:26px 22px; background:var(--bg-raised);
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .platform-card svg{width:26px; height:26px; color:var(--amber);}
+  .platform-name{font-family:var(--mono); font-weight:600; font-size:1.02rem;}
+  .platform-desc{color:var(--text-dim); font-size:0.87rem; flex-grow:1;}
+  .platform-card a.btn{width:100%; justify-content:center;}
+
+  .shells{margin-top:16px; display:flex; flex-wrap:wrap; gap:8px;}
+  .shells span{
+    font-family:var(--mono); font-size:0.78rem; color:var(--text-dim);
+    border:1px solid var(--line); padding:5px 10px; border-radius:20px;
+  }
+
+  footer{padding:44px 0 56px; border-top:1px solid var(--line);}
+  footer .wrap{
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:18px;
+  }
+  footer .brand{font-size:0.95rem;}
+  footer .links{display:flex; gap:22px; font-size:0.86rem; color:var(--text-dim);}
+  footer .links a:hover{color:var(--text);}
+
+  @media (max-width: 760px){
+    .feature-row{grid-template-columns:1fr; gap:8px;}
+    .download-grid{grid-template-columns:1fr;}
+    .hero{padding:56px 0 40px;}
+    section{padding:52px 0;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .term-body .cursor{animation:none;}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <div class="brand"><span class="dot">&gt;</span>VTerm<span class="dot">_</span></div>
+    <nav class="links">
+      <a href="#features">Funciones</a>
+      <a href="#themes">Temas</a>
+      <a href="#download">Descargar</a>
+      <a href="https://github.com/BernabeSuarez/VTerm">Código fuente</a>
+    </nav>
+    <a class="nav-cta" href="#download">Descargar</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-copy">
+      <p class="eyebrow-plain">macOS · Windows · Linux</p>
+      <h1>Una terminal que <span>se ve</span> y se siente tuya.</h1>
+      <p class="lede">VTerm es una terminal multiplataforma construida con Electron y xterm.js: pestañas, múltiples perfiles de shell y temas de color totalmente personalizables, con renderizado acelerado por GPU.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#download">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>
+          Descargar VTerm
+        </a>
+        <a class="btn btn-secondary" href="https://github.com/BernabeSuarez/VTerm">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49 0-.24-.01-.87-.01-1.71-2.78.62-3.37-1.37-3.37-1.37-.46-1.19-1.11-1.51-1.11-1.51-.91-.64.07-.63.07-.63 1 .07 1.53 1.05 1.53 1.05.89 1.57 2.34 1.12 2.91.85.09-.66.35-1.12.63-1.38-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.73 0 0 .84-.27 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.32 2.75-1.05 2.75-1.05.55 1.42.2 2.47.1 2.73.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.6.69.49A10.26 10.26 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z"/></svg>
+          Ver en GitHub
+        </a>
+      </div>
+      <p class="hero-note">Código abierto · sin telemetría · configuración en un único <code>config.json</code></p>
+    </div>
+
+    <div class="term-shell">
+      <div class="term-tabs">
+        <div class="term-dots"><span></span><span></span><span></span></div>
+        <div class="tab active">~/proyectos/vterm</div>
+        <div class="tab">zsh · docs</div>
+        <div class="tab">+</div>
+      </div>
+      <div class="term-body">
+        <p><span class="path">~/proyectos/vterm</span> <span class="ok">❯</span> npm run build:mac</p>
+        <p class="muted">• electron-builder  version=25.x  os=darwin</p>
+        <p class="muted">• packaging   platform=darwin arch=arm64</p>
+        <p><span class="accent">✓</span> instalador generado en <span class="path">dist/VTerm-1.0.0.dmg</span></p>
+        <p>&nbsp;</p>
+        <p class="muted"># clic derecho sobre una carpeta → "Abrir en VTerm"</p>
+        <p><span class="path">~/proyectos/vterm</span> <span class="ok">❯</span> <span class="cursor"></span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <h2>Pensada para trabajar todo el día en la terminal.</h2>
+    <p class="section-lede">Cada pestaña corre su propio proceso <code style="font-family:var(--mono); color:var(--seafoam)">node-pty</code>, así que podés tener varias shells abiertas sin que una interfiera con otra.</p>
+
+    <div class="feature-list">
+      <div class="feature-row">
+        <div class="feature-name">Perfiles de shell</div>
+        <div class="feature-desc">Elegí el shell por defecto para pestañas nuevas: Bash, Zsh, Fish, PowerShell o WSL. VTerm detecta automáticamente cuáles están instalados en tu sistema y solo muestra los disponibles.</div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-name">Temas personalizables</div>
+        <div class="feature-desc">Elegí entre los temas incluidos o sumá los tuyos: cada tema define los 16 colores ANSI y los colores del chrome de la ventana (pestañas, bordes, fondo).</div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-name">Integración con el explorador de archivos</div>
+        <div class="feature-desc">"Abrir en VTerm" aparece en el clic derecho de Finder, Explorer y Nautilus, y abre esa carpeta directamente como una pestaña nueva.</div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-name">Renderizado acelerado</div>
+        <div class="feature-desc">Usa el addon WebGL de xterm.js para dibujar por GPU, con retroceso automático a canvas 2D si no está disponible.</div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-name">Configuración persistente</div>
+        <div class="feature-desc">Tema, fuente, tamaño y perfil de shell se guardan en un único <code style="font-family:var(--mono); color:var(--seafoam)">config.json</code> local. Sin <code style="font-family:var(--mono); color:var(--seafoam)">localStorage</code>, sin nube.</div>
+      </div>
+    </div>
+
+    <div class="shells">
+      <span>Bash</span><span>Zsh</span><span>Fish</span><span>PowerShell</span><span>WSL</span>
+    </div>
+  </div>
+</section>
+
+<section id="themes" class="alt">
+  <div class="wrap">
+    <h2>Cambiá de tema en un clic, sin salir de la terminal.</h2>
+    <p class="section-lede">El selector de temas (🎨) aplica el cambio al instante. Agregar un tema propio es sumar un objeto al catálogo — no hace falta tocar nada más.</p>
+
+    <div class="themes-grid">
+      <div class="theme-card">
+        <div class="swatches">
+          <span style="background:#101216"></span><span style="background:#e8a33d"></span>
+          <span style="background:#5fd9a0"></span><span style="background:#6fa8dc"></span>
+        </div>
+        <div class="label"><b>Amber Dusk</b> por defecto</div>
+      </div>
+      <div class="theme-card">
+        <div class="swatches">
+          <span style="background:#0d1117"></span><span style="background:#79c0ff"></span>
+          <span style="background:#a5d6ff"></span><span style="background:#f0f6fc"></span>
+        </div>
+        <div class="label"><b>Midnight Blue</b></div>
+      </div>
+      <div class="theme-card">
+        <div class="swatches">
+          <span style="background:#282a36"></span><span style="background:#ff79c6"></span>
+          <span style="background:#50fa7b"></span><span style="background:#bd93f9"></span>
+        </div>
+        <div class="label"><b>Nocturne</b></div>
+      </div>
+      <div class="theme-card">
+        <div class="swatches">
+          <span style="background:#1b1f1a"></span><span style="background:#8fbc6a"></span>
+          <span style="background:#d7c485"></span><span style="background:#e2e8dd"></span>
+        </div>
+        <div class="label"><b>Phosphor Green</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap">
+    <h2>Descargá el instalador para tu sistema.</h2>
+    <p class="section-lede">Los builds se generan con electron-builder. Si todavía no hay una versión publicada, compilá desde el código fuente con <code style="font-family:var(--mono); color:var(--seafoam)">npm run build</code>.</p>
+
+    <div class="download-grid">
+      <div class="platform-card">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.365 1.43c0 1.14-.418 2.08-1.256 2.83-.9.83-1.99 1.31-2.94 1.22-.11-1.12.42-2.15 1.24-2.9.9-.83 2.05-1.28 2.96-1.15Zm3.9 15.92c-.38.87-.56 1.26-1.05 2.03-.68 1.07-1.65 2.4-2.85 2.41-1.06.01-1.33-.69-2.77-.68-1.44.01-1.74.7-2.8.68-1.2-.02-2.11-1.22-2.79-2.29-1.9-2.99-2.1-6.5-.93-8.36.83-1.32 2.14-2.09 3.37-2.09 1.25 0 2.03.68 3.06.68 1 0 1.6-.68 3.06-.68 1.1 0 2.26.6 3.09 1.63-2.72 1.49-2.28 5.36.61 6.67Z"/></svg>
+        <div class="platform-name">macOS</div>
+        <p class="platform-desc">Instalador .dmg. Registra "Abrir en VTerm" en el menú de Finder mediante un addon nativo NSServices.</p>
+        <a class="btn btn-primary" href="https://github.com/BernabeSuarez/VTerm/releases/latest">Descargar .dmg</a>
+      </div>
+      <div class="platform-card">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.5 9.75 2.2v9.3H0V3.5Zm10.75-1.42L24 .5v10.9H10.75V2.08ZM0 12.5h9.75v9.3L0 20.5v-8Zm10.75 0H24V23.5l-13.25-1.9v-9.1Z"/></svg>
+        <div class="platform-name">Windows</div>
+        <p class="platform-desc">Instalador .exe (NSIS). Suma "Abrir en VTerm" al menú contextual del Explorador durante la instalación.</p>
+        <a class="btn btn-primary" href="https://github.com/BernabeSuarez/VTerm/releases/latest">Descargar .exe</a>
+      </div>
+      <div class="platform-card">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 2c-1.4 0-2.5 1.3-2.5 3 0 1.1.5 2.2.5 3.3 0 .6-.2 1.1-.5 1.6-1.6.7-2.9 2.2-3.3 3.9-.2.9-.7 1.6-1.4 2.1-.9.6-1.3 1.6-1.1 2.6.2 1 1 1.7 2 1.8.5 0 1-.1 1.5-.3.6-.3 1.3-.3 1.9 0 .8.4 1.7.6 2.6.6.9 0 1.8-.2 2.6-.6.6-.3 1.3-.3 1.9 0 .5.2 1 .3 1.5.3 1 0 1.9-.7 2.1-1.7.2-1-.2-2-1.1-2.6-.7-.5-1.2-1.3-1.4-2.1-.4-1.7-1.7-3.2-3.3-3.9-.3-.5-.5-1-.5-1.6 0-1.1.5-2.2.5-3.3 0-1.7-1.1-3-2.5-3-.3 0-.5 0-.7.1a2 2 0 0 0-.7-.1Z"/></svg>
+        <div class="platform-name">Linux</div>
+        <p class="platform-desc">Paquetes AppImage / .deb. Registra "Abrir en VTerm" en Nautilus la primera vez que se abre la app.</p>
+        <a class="btn btn-primary" href="https://github.com/BernabeSuarez/VTerm/releases/latest">Descargar</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="brand"><span class="dot">&gt;</span>VTerm<span class="dot">_</span></div>
+    <div class="links">
+      <a href="https://github.com/BernabeSuarez/VTerm">Repositorio</a>
+      <a href="https://github.com/BernabeSuarez/VTerm/issues">Reportar un problema</a>
+      <a href="https://github.com/BernabeSuarez/VTerm/releases">Releases</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
